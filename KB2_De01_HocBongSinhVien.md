@@ -138,58 +138,183 @@ int classify(int score, int attendance, int passed)
 
 ## CÂU 2 – LỜI GIẢI (4 điểm)
 
-### Bước 1: Xác định các nút CFG
+### Bước 1: Đánh số câu lệnh và xác định các nút trong Đồ thị luồng điều khiển (CFG)
 
-```
-Nút 1: result = 0;
-Nút 2: [IF] score>=5 || (attendance>=80 && passed==1) ?   ← điều kiện phức hợp
-Nút 3: [IF] score >= 8 ?
-Nút 4: result = 3;
-Nút 5: [ELSE IF] score >= 6 ?
-Nút 6: result = 2;
-Nút 7: result = 1;
-Nút 8: return result;
-```
-
-### Bước 2: Tính độ phức tạp Cyclomatic V(G)
-
-- **Số nút (N):** 8
-- **Số cung (E):** 11
-  - 1→2, 2→3(True), 2→8(False), 3→4(True), 3→5(False), 4→8, 5→6(True), 5→7(False), 6→8, 7→8
-- **Số nút vị từ (P):** 3 (Nút 2, Nút 3, Nút 5)
-
-> **Công thức 1:** V(G) = E − N + 2 = 11 − 8 + 2 = **5**
->
-> **Công thức 2:** V(G) = P + 1 = 3 + 1 = **4**
-
-### Bước 3: Phân tích điều kiện cho Branch & Condition Coverage
-
-Điều kiện tại Nút 2: `score>=5` **OR** `(attendance>=80 AND passed==1)`
-
-Ký hiệu: A = `score>=5`, B = `attendance>=80`, C = `passed==1`
-
-Để đạt **Bao phủ điều kiện (Condition Coverage)**: mỗi điều kiện đơn (A, B, C) phải có lần True và lần False.
-
-### Bước 4: Bảng ca kiểm thử Branch & Condition Coverage
-
-| TC ID | score | attendance | passed | A(s≥5) | B(att≥80) | C(passed=1) | Nút 2 | Kết quả (result) |
-|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| **TC01** | 9 | 90 | 1 | T | T | T | True | 3 (Giỏi) – Nút 3 True |
-| **TC02** | 7 | 70 | 1 | T | F | T | True | 2 (Khá) – Nút 3 False, Nút 5 True |
-| **TC03** | 5 | 60 | 0 | T | F | F | True | 1 (TB) – Nút 3 F, Nút 5 F |
-| **TC04** | 3 | 85 | 1 | F | T | T | True | 1 (TB) – A=F nhưng B&&C=T |
-| **TC05** | 3 | 70 | 0 | F | F | F | False | 0 (Không đạt) |
-
-> - TC01: Bao phủ A=T, B=T, C=T, nhánh Nút 2=True, Nút 3=True → result=3
-> - TC02: A=T (đủ True nút 2), Nút 3=False, Nút 5=True → result=2
-> - TC03: A=T, B=F (B có False), C=F (C có False), Nút 5=False → result=1
-> - TC04: A=F (A có False), B=T, C=T (B&&C=True → vào khối if) → result=1
-> - TC05: A=F, B=F → toàn bộ False, Nút 2=False → result=0
-
-→ Tổng hợp: A có T(TC01,02,03) và F(TC04,05); B có T(TC01,04) và F(TC02,03,05); C có T(TC01,02,04) và F(TC03,05). Mọi điều kiện đơn đều có True và False → đạt Branch & Condition Coverage.
+Mã nguồn hàm `classify(int score, int attendance, int passed)` được phân tách thành các nút đồ thị:
+- **Nút 1:** `int result = 0;` (Khởi tạo kết quả mặc định)
+- **Nút 2:** `if (score >= 5 || (attendance >= 80 && passed == 1))` (Vị từ phức hợp điều kiện qua môn)
+- **Nút 3:** `if (score >= 8)` (Vị từ phân loại Giỏi)
+- **Nút 4:** `result = 3;` (Gán xếp loại Giỏi)
+- **Nút 5:** `else if (score >= 6)` (Vị từ phân loại Khá)
+- **Nút 6:** `result = 2;` (Gán xếp loại Khá)
+- **Nút 7:** `result = 1;` (Gán xếp loại Trung bình)
+- **Nút 8:** `return result;` (Trả về kết quả xếp loại)
+- **Nút 9:** `End / Exit` (Điểm kết thúc hàm)
 
 ---
 
-> **Tổng kết điểm:**
-> - Câu 1 (Bảng quyết định): 6 điểm – Xác định đúng C và A (1đ), bảng đủ 8 rules (2đ), bảng TC đúng (3đ).
-> - Câu 2 (Hộp trắng): 4 điểm – CFG đúng (1đ), V(G) đúng (1đ), phân tích điều kiện đúng (1đ), bảng TC đủ bao phủ (1đ).
+### Sơ đồ Đồ thị luồng điều khiển (CFG) tổng quát
+
+```mermaid
+flowchart TD
+    classDef startEnd fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff;
+    classDef decision fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff;
+    classDef process fill:#2196F3,stroke:#0D47A1,stroke-width:2px,color:#fff;
+    classDef returnNode fill:#9C27B0,stroke:#4A148C,stroke-width:2px,color:#fff;
+
+    N1["1. result = 0"]:::process --> N2{"2. score >= 5 || (att >= 80 && passed == 1)?"}:::decision
+    
+    N2 -- "True" --> N3{"3. score >= 8?"}:::decision
+    N2 -- "False" --> N8["8. return result"]:::returnNode
+    
+    N3 -- "True" --> N4["4. result = 3"]:::process
+    N3 -- "False" --> N5{"5. score >= 6?"}:::decision
+    
+    N5 -- "True" --> N6["6. result = 2"]:::process
+    N5 -- "False" --> N7["7. result = 1"]:::process
+    
+    N4 --> N8
+    N6 --> N8
+    N7 --> N8
+    
+    N8 --> N9(["9. End (Kết thúc hàm)"]):::startEnd
+```
+
+---
+
+### Bước 2: Tính độ phức tạp Cyclomatic $V(G)$
+
+Thống kê các thành phần của đồ thị luồng điều khiển $G$:
+- **Số nút ($N$):** $9$ (từ Nút 1 đến Nút 9)
+- **Số cung ($E$):** $11$
+  - Các cung: $(1\to2)$, $(2\to3)$, $(2\to8)$, $(3\to4)$, $(3\to5)$, $(4\to8)$, $(5\to6)$, $(5\to7)$, $(6\to8)$, $(7\to8)$, $(8\to9)$
+- **Số nút vị từ phân nhánh ($P$):** $3$ nút điều kiện (Nút 2, Nút 3, Nút 5)
+
+Áp dụng 2 công thức chuẩn theo giáo trình:
+- **Công thức 1 (Theo số cung và số nút):**
+  $$V(G) = E - N + 2 = 11 - 9 + 2 = 4$$
+- **Công thức 2 (Theo số nút vị từ $P$):**
+  $$V(G) = P + 1 = 3 + 1 = 4$$
+
+*(Kiểm chứng theo số miền phẳng $R$: Đồ thị có 3 miền khép kín và 1 miền mở vô hạn bao quanh $\implies V(G) = R = 4$)*.
+
+> **Kết luận:** Độ phức tạp Cyclomatic $V(G) = 4$.
+
+---
+
+### Bước 3: Sơ đồ hóa các đường thi hành theo tiêu chí Branch & Condition Coverage
+
+Để đạt **Bao phủ nhánh và điều kiện (Branch & Condition Coverage)**:
+1. Mọi nhánh rẽ của tất cả các nút quyết định đều phải được thực thi ít nhất một lần (Branch Coverage).
+2. Từng điều kiện thành phần trong biểu thức phức hợp tại Nút 2: $A = (\text{score} \ge 5)$, $B = (\text{attendance} \ge 80)$, $C = (\text{passed} == 1)$ đều phải nhận cả giá trị `True` và `False` ít nhất một lần (Condition Coverage).
+
+#### 🔹 Đường P1 (Xếp loại Giỏi - Branch Nút 3 True)
+- **Luồng:** $1 \to 2(\text{True}) \to 3(\text{True}) \to 4 \to 8 \to 9$
+- **Trạng thái điều kiện:** $A = \text{True}, B = \text{True}, C = \text{True} \implies$ Nút 2 True, Nút 3 True $\implies result = 3$.
+
+```mermaid
+flowchart LR
+    classDef path fill:#4CAF50,stroke:#1B5E20,stroke-width:2px,color:#fff;
+    P1_1["1. Init"]:::path --> P1_2{"2. Nút 2 (True)"}:::path
+    P1_2 --> P1_3{"3. score >= 8 (True)"}:::path
+    P1_3 --> P1_4["4. result = 3"]:::path
+    P1_4 --> P1_8["8. return result"]:::path
+    P1_8 --> P1_9(["9. End"]):::path
+```
+
+#### 🔹 Đường P2 (Xếp loại Khá - Branch Nút 5 True)
+- **Luồng:** $1 \to 2(\text{True}) \to 3(\text{False}) \to 5(\text{True}) \to 6 \to 8 \to 9$
+- **Trạng thái điều kiện:** $A = \text{True}, B = \text{False}, C = \text{True} \implies$ Nút 2 True, Nút 3 False, Nút 5 True $\implies result = 2$.
+
+```mermaid
+flowchart LR
+    classDef path fill:#2196F3,stroke:#0D47A1,stroke-width:2px,color:#fff;
+    P2_1["1. Init"]:::path --> P2_2{"2. Nút 2 (True)"}:::path
+    P2_2 --> P2_3{"3. score >= 8 (False)"}:::path
+    P2_3 --> P2_5{"5. score >= 6 (True)"}:::path
+    P2_5 --> P2_6["6. result = 2"]:::path
+    P2_6 --> P2_8["8. return result"]:::path
+    P2_8 --> P2_9(["9. End"]):::path
+```
+
+#### 🔹 Đường P3 (Xếp loại Trung bình - Branch Nút 5 False)
+- **Luồng:** $1 \to 2(\text{True}) \to 3(\text{False}) \to 5(\text{False}) \to 7 \to 8 \to 9$
+- **Trạng thái điều kiện:** $A = \text{True}, B = \text{False}, C = \text{False} \implies$ Nút 2 True, Nút 3 False, Nút 5 False $\implies result = 1$.
+
+```mermaid
+flowchart LR
+    classDef path fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff;
+    P3_1["1. Init"]:::path --> P3_2{"2. Nút 2 (True)"}:::path
+    P3_2 --> P3_3{"3. score >= 8 (False)"}:::path
+    P3_3 --> P3_5{"5. score >= 6 (False)"}:::path
+    P3_5 --> P3_7["7. result = 1"]:::path
+    P3_7 --> P3_8["8. return result"]:::path
+    P3_8 --> P3_9(["9. End"]):::path
+```
+
+#### 🔹 Đường P4 (Vào Nút 2 nhờ điều kiện phụ $B \land C$ khi $A = \text{False}$)
+- **Luồng:** $1 \to 2(\text{True}) \to 3(\text{False}) \to 5(\text{False}) \to 7 \to 8 \to 9$
+- **Trạng thái điều kiện:** $A = \text{False}, B = \text{True}, C = \text{True} \implies$ Nhánh $B \land C$ kích hoạt Nút 2 True $\implies result = 1$.
+
+```mermaid
+flowchart LR
+    classDef path fill:#9C27B0,stroke:#4A148C,stroke-width:2px,color:#fff;
+    P4_1["1. Init"]:::path --> P4_2{"2. A=F, B&&C=T (True)"}:::path
+    P4_2 --> P4_3{"3. score >= 8 (False)"}:::path
+    P4_3 --> P4_5{"5. score >= 6 (False)"}:::path
+    P4_5 --> P4_7["7. result = 1"]:::path
+    P4_7 --> P4_8["8. return result"]:::path
+    P4_8 --> P4_9(["9. End"]):::path
+```
+
+#### 🔹 Đường P5 (Không đạt - Branch Nút 2 False)
+- **Luồng:** $1 \to 2(\text{False}) \to 8 \to 9$
+- **Trạng thái điều kiện:** $A = \text{False}, B = \text{False}, C = \text{False} \implies$ Nút 2 False $\implies result = 0$.
+
+```mermaid
+flowchart LR
+    classDef path fill:#F44336,stroke:#B71C1C,stroke-width:2px,color:#fff;
+    P5_1["1. Init (result=0)"]:::path --> P5_2{"2. Nút 2 (False)"}:::path
+    P5_2 -->|False| P5_8["8. return result (0)"]:::path
+    P5_8 --> P5_9(["9. End"]):::path
+```
+
+---
+
+### Bước 4: Ma trận kiểm chứng Bao phủ điều kiện con (Condition Coverage Matrix)
+
+| Ca kiểm thử | $A$: `score >= 5` | $B$: `att >= 80` | $C$: `passed == 1` | Biểu thức Nút 2 | Nhánh Nút 3 | Nhánh Nút 5 | Kết quả (`result`) |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **TC01** | **True** | **True** | **True** | True | **True** | *(bỏ qua)* | 3 (Giỏi) |
+| **TC02** | True | **False** | True | True | **False** | **True** | 2 (Khá) |
+| **TC03** | True | False | **False** | True | False | **False** | 1 (Trung bình) |
+| **TC04** | **False** | True | True | True | False | False | 1 (Trung bình) |
+| **TC05** | False | False | False | **False** | *(bỏ qua)* | *(bỏ qua)* | 0 (Không đạt) |
+
+> **Kiểm chứng mức độ bao phủ:**
+> - Điều kiện con $A$: có `True` (TC01, TC02, TC03) và `False` (TC04, TC05) $\implies$ **100% Condition A**.
+> - Điều kiện con $B$: có `True` (TC01, TC04) và `False` (TC02, TC03, TC05) $\implies$ **100% Condition B**.
+> - Điều kiện con $C$: có `True` (TC01, TC02, TC04) và `False` (TC03, TC05) $\implies$ **100% Condition C**.
+> - Quyết định Nút 2: có `True` (TC01–TC04) và `False` (TC05) $\implies$ **100% Branch Nút 2**.
+> - Quyết định Nút 3: có `True` (TC01) và `False` (TC02–TC04) $\implies$ **100% Branch Nút 3**.
+> - Quyết định Nút 5: có `True` (TC02) và `False` (TC03, TC04) $\implies$ **100% Branch Nút 5**.
+
+---
+
+### Bước 5: Bảng ca kiểm thử hộp trắng hoàn chỉnh (White-box Test Cases)
+
+| TC ID | Mục tiêu kiểm thử | `score` | `attendance` | `passed` | Vết thực thi qua các nút | Kết quả mong đợi | Tiêu chí bao phủ đạt được |
+|:---:|:---|:---:|:---:|:---:|:---|:---:|:---|
+| **TC01** | Phủ Giỏi (Nút 3 True), A=T, B=T, C=T | 9 | 90 | 1 | $1 \to 2(T) \to 3(T) \to 4 \to 8 \to 9$ | `3` | Nhánh True Nút 3, câu lệnh Nút 4 |
+| **TC02** | Phủ Khá (Nút 5 True), B=F | 7 | 70 | 1 | $1 \to 2(T) \to 3(F) \to 5(T) \to 6 \to 8 \to 9$ | `2` | Nhánh True Nút 5, câu lệnh Nút 6 |
+| **TC03** | Phủ TB (Nút 5 False), C=F | 5 | 60 | 0 | $1 \to 2(T) \to 3(F) \to 5(F) \to 7 \to 8 \to 9$ | `1` | Nhánh False Nút 5, câu lệnh Nút 7 |
+| **TC04** | Phủ nhánh phụ $(B \land C)$, A=F | 3 | 85 | 1 | $1 \to 2(T) \to 3(F) \to 5(F) \to 7 \to 8 \to 9$ | `1` | Kiểm chứng điều kiện $A=\text{False}$ nhưng Nút 2 vẫn True |
+| **TC05** | Phủ Không đạt (Nút 2 False), toàn bộ F | 3 | 70 | 0 | $1 \to 2(F) \to 8 \to 9$ | `0` | Nhánh False Nút 2 |
+
+---
+
+> **Tổng kết thang điểm đạt được:**
+> - **Vẽ sơ đồ CFG:** 1.0 điểm – Đầy đủ nút, nhánh rẽ điều kiện và điểm hội tụ rõ ràng.
+> - **Tính Cyclomatic Complexity $V(G)$:** 1.0 điểm – Trình bày đủ 2 công thức $E - N + 2 = 11 - 9 + 2 = 4$ và $P + 1 = 3 + 1 = 4$.
+> - **Phân tích và sơ đồ hóa Branch & Condition Coverage:** 1.0 điểm – Sơ đồ hóa từng đường, ma trận điều kiện con đầy đủ True/False.
+> - **Thiết kế bảng Ca kiểm thử (Test Cases):** 1.0 điểm – Input chi tiết, vết thực thi và kết quả trả về chính xác.

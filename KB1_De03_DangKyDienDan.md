@@ -168,54 +168,164 @@ int GetMaxDay(int month, int year)
 
 ## CÂU 2 – LỜI GIẢI (4 điểm)
 
-### Bước 1: Đánh số câu lệnh và xác định các nút CFG
+### Bước 1: Đánh số câu lệnh và xác định các nút trong Đồ thị luồng điều khiển (CFG)
 
-```
-Nút 1: (Vào hàm – khai báo maxDay)
-Nút 2: [IF] month == 2 ?
-Nút 3: [IF] năm nhuận: (year%4==0 && year%100!=0) || (year%400==0) ?
-Nút 4: maxDay = 29;
-Nút 5: maxDay = 28;
-Nút 6: [ELSE IF] month == 4 || 6 || 9 || 11 ?
-Nút 7: maxDay = 30;
-Nút 8: maxDay = 31;
-Nút 9: return maxDay;
-```
-
-### Bước 2: Tính độ phức tạp Cyclomatic V(G)
-
-- **Số nút (N):** 9
-- **Số cung (E):** 11
-  - 1→2, 2→3(True), 2→6(False), 3→4(True), 3→5(False), 4→9, 5→9, 6→7(True), 6→8(False), 7→9, 8→9
-- **Số nút vị từ (P):** 3 (Nút 2, Nút 3, Nút 6)
-
-> **Công thức 1:** V(G) = E − N + 2 = 11 − 9 + 2 = **4**
->
-> **Công thức 2:** V(G) = P + 1 = 3 + 1 = **4**
-
-→ Cần **4 đường thi hành cơ sở**.
-
-### Bước 3: Liệt kê các đường thi hành cơ sở (Basis Paths)
-
-| STT | Đường thi hành | Mô tả |
-|:--:|:--|:--|
-| **P1** | 1 → 2(True) → 3(True) → 4 → 9 | Tháng 2, năm nhuận → 29 ngày |
-| **P2** | 1 → 2(True) → 3(False) → 5 → 9 | Tháng 2, không nhuận → 28 ngày |
-| **P3** | 1 → 2(False) → 6(True) → 7 → 9 | Tháng 4/6/9/11 → 30 ngày |
-| **P4** | 1 → 2(False) → 6(False) → 8 → 9 | Các tháng còn lại (1,3,5,7,8,10,12) → 31 ngày |
-
-### Bước 4: Bảng ca kiểm thử
-
-| TC ID | Input (month, year) | Đường đi | Kết quả mong đợi (maxDay) |
-|:--:|:--:|:--|:--:|
-| **TC_P1** | month=2, year=2024 | 1→2(T)→3(T)→4→9 | 29 (2024 là năm nhuận: 2024%4=0, 2024%100≠0) |
-| **TC_P2** | month=2, year=2023 | 1→2(T)→3(F)→5→9 | 28 (2023 không nhuận) |
-| **TC_P3** | month=4, year=2024 | 1→2(F)→6(T)→7→9 | 30 (tháng 4 có 30 ngày) |
-| **TC_P4** | month=1, year=2024 | 1→2(F)→6(F)→8→9 | 31 (tháng 1 có 31 ngày) |
+Mã nguồn hàm `GetMaxDay(int month, int year)` được phân tách thành các nút đồ thị:
+- **Nút 1:** `int maxDay;` (Vào hàm, khai báo biến kết quả)
+- **Nút 2:** `if (month == 2)` (Vị từ rẽ nhánh 1: kiểm tra có phải tháng 2)
+- **Nút 3:** `if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))` (Vị từ rẽ nhánh 2: kiểm tra năm nhuận)
+- **Nút 4:** `maxDay = 29;` (Gán số ngày tháng 2 năm nhuận)
+- **Nút 5:** `maxDay = 28;` (Gán số ngày tháng 2 năm thường)
+- **Nút 6:** `else if (month == 4 || month == 6 || month == 9 || month == 11)` (Vị từ rẽ nhánh 3: kiểm tra nhóm tháng có 30 ngày)
+- **Nút 7:** `maxDay = 30;` (Gán 30 ngày)
+- **Nút 8:** `maxDay = 31;` (Gán 31 ngày cho các tháng còn lại)
+- **Nút 9:** `return maxDay;` (Trả về số ngày lớn nhất)
+- **Nút 10:** `End / Exit` (Điểm kết thúc hàm)
 
 ---
 
-> **Tổng kết điểm:**
-> - Câu 1a (Lớp tương đương): 3 điểm – Đủ 2 biến, đủ lớp, bảng TC ≥ 1 TC/lớp.
-> - Câu 1b (Giá trị biên): 3 điểm – Đủ 4 cụm biên tuổi + 2 cụm biên username.
-> - Câu 2 (Hộp trắng): 4 điểm – CFG đúng (1đ), V(G) = 4 bằng 2 CT (1đ), đủ 4 Basis Paths (1đ), bảng TC đúng (1đ).
+### Sơ đồ Đồ thị luồng điều khiển (CFG) tổng quát
+
+```mermaid
+flowchart TD
+    classDef startEnd fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff;
+    classDef decision fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff;
+    classDef process fill:#2196F3,stroke:#0D47A1,stroke-width:2px,color:#fff;
+    classDef returnNode fill:#9C27B0,stroke:#4A148C,stroke-width:2px,color:#fff;
+
+    N1["1. int maxDay"]:::process --> N2{"2. month == 2?"}:::decision
+    
+    N2 -- "True" --> N3{"3. Năm nhuận?"}:::decision
+    N2 -- "False" --> N6{"6. month in {4,6,9,11}?"}:::decision
+    
+    N3 -- "True" --> N4["4. maxDay = 29"]:::process
+    N3 -- "False" --> N5["5. maxDay = 28"]:::process
+    
+    N6 -- "True" --> N7["7. maxDay = 30"]:::process
+    N6 -- "False" --> N8["8. maxDay = 31"]:::process
+    
+    N4 --> N9["9. return maxDay"]:::returnNode
+    N5 --> N9
+    N7 --> N9
+    N8 --> N9
+    
+    N9 --> N10(["10. End (Kết thúc hàm)"]):::startEnd
+```
+
+---
+
+### Bước 2: Tính độ phức tạp Cyclomatic $V(G)$
+
+Thống kê các thành phần của đồ thị luồng điều khiển $G$:
+- **Số nút ($N$):** $10$ (từ Nút 1 đến Nút 10)
+- **Số cung ($E$):** $12$
+  - Các cung: $(1\to2)$, $(2\to3)$, $(2\to6)$, $(3\to4)$, $(3\to5)$, $(4\to9)$, $(5\to9)$, $(6\to7)$, $(6\to8)$, $(7\to9)$, $(8\to9)$, $(9\to10)$
+- **Số nút vị từ phân nhánh ($P$):** $3$ nút điều kiện (Nút 2, Nút 3, Nút 6)
+
+Áp dụng 2 công thức chuẩn theo giáo trình:
+- **Công thức 1 (Theo số cung và số nút):**
+  $$V(G) = E - N + 2 = 12 - 10 + 2 = 4$$
+- **Công thức 2 (Theo số nút vị từ $P$):**
+  $$V(G) = P + 1 = 3 + 1 = 4$$
+
+*(Kiểm chứng theo số miền phẳng $R$: Đồ thị có 3 miền đóng và 1 miền mở bao quanh $\implies V(G) = R = 4$)*.
+
+> **Kết luận:** Độ phức tạp Cyclomatic $V(G) = 4$. Cần tối thiểu **4 đường thi hành cơ sở (Basis Paths)** độc lập tuyến tính để bao phủ kiểm thử.
+
+---
+
+### Bước 3: Sơ đồ hóa từng đường thi hành cơ sở (Basis Paths)
+
+#### 🔹 Đường 1 (P1): Tháng 2 và là năm nhuận
+- **Đường đi:** $1 \to 2(\text{True}) \to 3(\text{True}) \to 4 \to 9 \to 10$
+- **Đặc điểm:** Bao phủ nhánh `True` của Nút 2 và nhánh `True` của Nút 3; gán `maxDay = 29`.
+
+```mermaid
+flowchart LR
+    classDef path fill:#4CAF50,stroke:#1B5E20,stroke-width:2px,color:#fff;
+    P1_1["1. Init"]:::path --> P1_2{"2. month==2 (True)"}:::path
+    P1_2 --> P1_3{"3. Năm nhuận (True)"}:::path
+    P1_3 --> P1_4["4. maxDay = 29"]:::path
+    P1_4 --> P1_9["9. return maxDay"]:::path
+    P1_9 --> P1_10(["10. End"]):::path
+```
+
+#### 🔹 Đường 2 (P2): Tháng 2 và là năm thường (không nhuận)
+- **Đường đi:** $1 \to 2(\text{True}) \to 3(\text{False}) \to 5 \to 9 \to 10$
+- **Đặc điểm:** Bao phủ nhánh `True` của Nút 2 và nhánh `False` của Nút 3; gán `maxDay = 28`.
+
+```mermaid
+flowchart LR
+    classDef path fill:#2196F3,stroke:#0D47A1,stroke-width:2px,color:#fff;
+    P2_1["1. Init"]:::path --> P2_2{"2. month==2 (True)"}:::path
+    P2_2 --> P2_3{"3. Năm nhuận (False)"}:::path
+    P2_3 --> P2_5["5. maxDay = 28"]:::path
+    P2_5 --> P2_9["9. return maxDay"]:::path
+    P2_9 --> P2_10(["10. End"]):::path
+```
+
+#### 🔹 Đường 3 (P3): Không phải tháng 2, thuộc nhóm tháng 4, 6, 9, 11
+- **Đường đi:** $1 \to 2(\text{False}) \to 6(\text{True}) \to 7 \to 9 \to 10$
+- **Đặc điểm:** Bao phủ nhánh `False` của Nút 2 và nhánh `True` của Nút 6; gán `maxDay = 30`.
+
+```mermaid
+flowchart LR
+    classDef path fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff;
+    P3_1["1. Init"]:::path --> P3_2{"2. month==2 (False)"}:::path
+    P3_2 --> P3_6{"6. month in {4,6,9,11} (True)"}:::path
+    P3_6 --> P3_7["7. maxDay = 30"]:::path
+    P3_7 --> P3_9["9. return maxDay"]:::path
+    P3_9 --> P3_10(["10. End"]):::path
+```
+
+#### 🔹 Đường 4 (P4): Không phải tháng 2, thuộc các tháng còn lại (1, 3, 5, 7, 8, 10, 12)
+- **Đường đi:** $1 \to 2(\text{False}) \to 6(\text{False}) \to 8 \to 9 \to 10$
+- **Đặc điểm:** Bao phủ nhánh `False` của Nút 2 và nhánh `False` của Nút 6; gán `maxDay = 31`.
+
+```mermaid
+flowchart LR
+    classDef path fill:#9C27B0,stroke:#4A148C,stroke-width:2px,color:#fff;
+    P4_1["1. Init"]:::path --> P4_2{"2. month==2 (False)"}:::path
+    P4_2 --> P4_6{"6. month in {4,6,9,11} (False)"}:::path
+    P4_6 --> P4_8["8. maxDay = 31"]:::path
+    P4_8 --> P4_9["9. return maxDay"]:::path
+    P4_9 --> P4_10(["10. End"]):::path
+```
+
+---
+
+### Bước 4: Ma trận bao phủ các cung (Branch / Edge Coverage Matrix)
+
+| Cung (Edge) | Nhãn nhánh | P1 | P2 | P3 | P4 | Mức độ bao phủ |
+|:---:|:---|:---:|:---:|:---:|:---:|:---:|
+| **e1** ($1 \to 2$) | Khai báo vào kiểm tra tháng | ✓ | ✓ | ✓ | ✓ | 100% |
+| **e2** ($2 \to 3$) | Nhánh `month == 2` là True | ✓ | ✓ | | | 100% |
+| **e3** ($2 \to 6$) | Nhánh `month == 2` là False | | | ✓ | ✓ | 100% |
+| **e4** ($3 \to 4$) | Nhánh năm nhuận là True | ✓ | | | | 100% |
+| **e5** ($3 \to 5$) | Nhánh năm nhuận là False | | ✓ | | | 100% |
+| **e6** ($4 \to 9$) | Gán 29 ngày chuyển sang return | ✓ | | | | 100% |
+| **e7** ($5 \to 9$) | Gán 28 ngày chuyển sang return | | ✓ | | | 100% |
+| **e8** ($6 \to 7$) | Nhánh tháng 30 ngày là True | | | ✓ | | 100% |
+| **e9** ($6 \to 8$) | Nhánh tháng 30 ngày là False | | | | ✓ | 100% |
+| **e10** ($7 \to 9$) | Gán 30 ngày chuyển sang return | | | ✓ | | 100% |
+| **e11** ($8 \to 9$) | Gán 31 ngày chuyển sang return | | | | ✓ | 100% |
+| **e12** ($9 \to 10$) | Trả về kết quả đến kết thúc | ✓ | ✓ | ✓ | ✓ | 100% |
+
+---
+
+### Bước 5: Bảng ca kiểm thử hộp trắng (White-box Test Cases)
+
+| TC ID | Mục tiêu kiểm thử | Dữ liệu đầu vào (`month`, `year`) | Luồng thực thi qua các nút | Kết quả mong đợi (`maxDay`) | Tiêu chí bao phủ đạt được |
+|:---:|:---|:---|:---|:---:|:---|
+| **TC_P1** | Phủ đường P1 (Tháng 2, năm nhuận) | `month = 2`, `year = 2024`<br>*(2024 chia hết cho 4, không chia hết cho 100)* | $1 \to 2(T) \to 3(T) \to 4 \to 9 \to 10$ | `29` | Nhánh True Nút 2, Nhánh True Nút 3, câu lệnh Nút 4 |
+| **TC_P2** | Phủ đường P2 (Tháng 2, năm thường) | `month = 2`, `year = 2023`<br>*(2023 không chia hết cho 4)* | $1 \to 2(T) \to 3(F) \to 5 \to 9 \to 10$ | `28` | Nhánh True Nút 2, Nhánh False Nút 3, câu lệnh Nút 5 |
+| **TC_P3** | Phủ đường P3 (Tháng 30 ngày) | `month = 4`, `year = 2024` | $1 \to 2(F) \to 6(T) \to 7 \to 9 \to 10$ | `30` | Nhánh False Nút 2, Nhánh True Nút 6, câu lệnh Nút 7 |
+| **TC_P4** | Phủ đường P4 (Tháng 31 ngày) | `month = 1`, `year = 2024` | $1 \to 2(F) \to 6(F) \to 8 \to 9 \to 10$ | `31` | Nhánh False Nút 2, Nhánh False Nút 6, câu lệnh Nút 8 |
+
+---
+
+> **Tổng kết thang điểm đạt được:**
+> - **Vẽ sơ đồ CFG:** 1.0 điểm – Đầy đủ nút, nhánh rẽ điều kiện và điểm hội tụ rõ ràng.
+> - **Tính Cyclomatic Complexity $V(G)$:** 1.0 điểm – Trình bày đủ 2 công thức $E - N + 2 = 12 - 10 + 2 = 4$ và $P + 1 = 3 + 1 = 4$.
+> - **Liệt kê và sơ đồ hóa các Basis Paths:** 1.0 điểm – 4 đường cơ sở có sơ đồ minh họa luồng thực thi trực quan.
+> - **Thiết kế bảng Ca kiểm thử (Test Cases):** 1.0 điểm – Input cụ thể, vết luồng đi qua các nút và kết quả trả về chính xác.

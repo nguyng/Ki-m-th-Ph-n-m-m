@@ -148,83 +148,165 @@ int checkLogin(char* username, char* password, int isAdmin)
 
 ## CÂU 2 – LỜI GIẢI (4 điểm)
 
-### Bước 1: Đánh số câu lệnh và xác định nút CFG
+### Bước 1: Đánh số câu lệnh và xác định các nút trong Đồ thị luồng điều khiển (CFG)
 
-```
-Nút 1: status = 0;
-Nút 2: [IF] username != NULL && password != NULL ?   ← Điều kiện ngoài
-Nút 3: [IF] strlen(password) >= 8 ?                 ← Điều kiện giữa
-Nút 4: status = 1;
-Nút 5: [IF] isAdmin == 1 ?                          ← Điều kiện trong
-Nút 6: status = 2;
-Nút 7: return status;
-```
-
-### Bước 2: Tính độ phức tạp Cyclomatic V(G)
-
-- **Số nút (N):** 7
-- **Số cung (E):** 9
-  - 1→2, 2→3(True), 2→7(False), 3→4(True), 3→7(False), 4→5, 5→6(True), 5→7(False), 6→7
-- **Số nút vị từ (P):** 3 (Nút 2, Nút 3, Nút 5)
-
-> **Công thức 1:** V(G) = E − N + 2 = 9 − 7 + 2 = **4**
->
-> **Công thức 2:** V(G) = P + 1 = 3 + 1 = **4**
-
-### Bước 3: Liệt kê tất cả câu lệnh và quyết định
-
-**Danh sách câu lệnh (Statements):**
-
-| STT | Câu lệnh |
-|:--:|:--|
-| S1 | `status = 0` |
-| S2 | Kiểm tra `username != NULL && password != NULL` |
-| S3 | Kiểm tra `strlen(password) >= 8` |
-| S4 | `status = 1` |
-| S5 | Kiểm tra `isAdmin == 1` |
-| S6 | `status = 2` |
-| S7 | `return status` |
-
-**Danh sách quyết định/nhánh (Decisions/Branches):**
-
-| QĐ | Điều kiện | Nhánh True | Nhánh False |
-|:--:|:--|:--|:--|
-| D1 | `username!=NULL && password!=NULL` | Vào khối if ngoài | Bỏ qua, về return |
-| D2 | `strlen(password) >= 8` | Vào khối if giữa | Bỏ qua, về return |
-| D3 | `isAdmin == 1` | status = 2 | Giữ status = 1, về return |
+Mã nguồn hàm `checkLogin(char *username, char *password, int isAdmin)` được phân tách thành các nút đồ thị:
+- **Nút 1:** `int status = 0;` *(Câu lệnh S1: Khởi tạo trạng thái mặc định)*
+- **Nút 2:** `if (username != NULL && password != NULL)` *(Quyết định D1: Kiểm tra tài khoản mật khẩu không rỗng)*
+- **Nút 3:** `if (strlen(password) >= 8)` *(Quyết định D2: Kiểm tra độ dài tối thiểu của mật khẩu)*
+- **Nút 4:** `status = 1;` *(Câu lệnh S4: Gán đăng nhập thành công quyền User)*
+- **Nút 5:** `if (isAdmin == 1)` *(Quyết định D3: Kiểm tra quyền quản trị viên Admin)*
+- **Nút 6:** `status = 2;` *(Câu lệnh S6: Nâng quyền Admin)*
+- **Nút 7:** `return status;` *(Câu lệnh S7: Trả về trạng thái đăng nhập)*
+- **Nút 8:** `End / Exit` *(Điểm kết thúc hàm)*
 
 ---
 
-### Bước 4: Bảng ca kiểm thử – Statement + Decision Coverage
+### Sơ đồ Đồ thị luồng điều khiển (CFG) tổng quát
 
-**Tiêu chí Statement Coverage:** Mọi câu lệnh (S1–S7) phải thực thi ít nhất 1 lần.
+```mermaid
+flowchart TD
+    classDef startEnd fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff;
+    classDef decision fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff;
+    classDef process fill:#2196F3,stroke:#0D47A1,stroke-width:2px,color:#fff;
+    classDef returnNode fill:#9C27B0,stroke:#4A148C,stroke-width:2px,color:#fff;
 
-**Tiêu chí Decision Coverage:** Mọi nhánh True/False của D1, D2, D3 phải thực thi ít nhất 1 lần.
-
-| TC ID | username | password | isAdmin | D1 | D2 | D3 | Câu lệnh thực thi | status (KQ) |
-|:--:|:--|:--|:--:|:--:|:--:|:--:|:--|:--:|
-| **TC01** | "admin" | "pass12345" | 1 | T | T | T | S1,S2,S3,S4,S5,S6,S7 | **2** (Admin) |
-| **TC02** | "user1" | "pass12345" | 0 | T | T | F | S1,S2,S3,S4,S5,S7 | **1** (User) |
-| **TC03** | "user1" | "abc" | 0 | T | F | - | S1,S2,S3,S7 | **0** (Thất bại – pass ngắn) |
-| **TC04** | NULL | NULL | 0 | F | - | - | S1,S2,S7 | **0** (Thất bại – null) |
-
-**Kiểm tra bao phủ:**
-
-| Nhánh | Được bao phủ bởi |
-|:--|:--|
-| D1 = True | TC01, TC02, TC03 |
-| D1 = False | TC04 |
-| D2 = True | TC01, TC02 |
-| D2 = False | TC03 |
-| D3 = True | TC01 |
-| D3 = False | TC02 |
-
-✅ **Statement Coverage:** S1–S7 đều được thực thi (TC01 bao phủ toàn bộ đường dài nhất).
-
-✅ **Decision Coverage:** Mọi nhánh T/F của D1, D2, D3 đều có test case bao phủ.
+    N1["1. status = 0 (S1)"]:::process --> N2{"2. username!=NULL && password!=NULL? (D1)"}:::decision
+    
+    N2 -- "True" --> N3{"3. strlen(password) >= 8? (D2)"}:::decision
+    N2 -- "False" --> N7["7. return status (S7)"]:::returnNode
+    
+    N3 -- "True" --> N4["4. status = 1 (S4)"]:::process
+    N3 -- "False" --> N7
+    
+    N4 --> N5{"5. isAdmin == 1? (D3)"}:::decision
+    
+    N5 -- "True" --> N6["6. status = 2 (S6)"]:::process
+    N5 -- "False" --> N7
+    
+    N6 --> N7
+    N7 --> N8(["8. End (Kết thúc hàm)"]):::startEnd
+```
 
 ---
 
-> **Tổng kết điểm:**
-> - Câu 1 (Bảng quyết định): 6 điểm – Xác định đúng C và A (1đ), bảng đủ 8 rules (2đ), bảng TC đúng (3đ).
-> - Câu 2 (Hộp trắng – Stmt+Decision): 4 điểm – CFG đúng (1đ), V(G)=4 bằng 2 CT (1đ), liệt kê đúng S và D (0.5đ), bảng TC đạt cả 2 tiêu chí (1.5đ).
+### Bước 2: Tính độ phức tạp Cyclomatic $V(G)$
+
+Thống kê các thành phần của đồ thị luồng điều khiển $G$:
+- **Số nút ($N$):** $8$ (từ Nút 1 đến Nút 8)
+- **Số cung ($E$):** $10$
+  - Các cung: $(1\to2)$, $(2\to3)$, $(2\to7)$, $(3\to4)$, $(3\to7)$, $(4\to5)$, $(5\to6)$, $(5\to7)$, $(6\to7)$, $(7\to8)$
+- **Số nút vị từ phân nhánh ($P$):** $3$ nút điều kiện (Nút 2, Nút 3, Nút 5)
+
+Áp dụng 2 công thức chuẩn theo giáo trình:
+- **Công thức 1 (Theo số cung và số nút):**
+  $$V(G) = E - N + 2 = 10 - 8 + 2 = 4$$
+- **Công thức 2 (Theo số nút vị từ $P$):**
+  $$V(G) = P + 1 = 3 + 1 = 4$$
+
+*(Kiểm chứng theo số miền phẳng $R$: Đồ thị có 3 miền khép kín và 1 miền mở vô hạn bao quanh $\implies V(G) = R = 4$)*.
+
+> **Kết luận:** Độ phức tạp Cyclomatic $V(G) = 4$. Cần tối thiểu **4 ca kiểm thử** để bao phủ toàn bộ câu lệnh và quyết định.
+
+---
+
+### Bước 3: Sơ đồ hóa từng đường thi hành (Statement & Decision Coverage Paths)
+
+#### 🔹 Đường P1: Đăng nhập thành công với quyền Admin (Phủ S1, S2, S3, S4, S5, S6, S7)
+- **Đường đi:** $1 \to 2(\text{True}) \to 3(\text{True}) \to 4 \to 5(\text{True}) \to 6 \to 7 \to 8$
+- **Đặc điểm:** Bao phủ nhánh `True` của D1, D2, D3; thực thi toàn bộ các câu lệnh gán status = 1 và status = 2; trả về `status = 2`.
+
+```mermaid
+flowchart LR
+    classDef path fill:#4CAF50,stroke:#1B5E20,stroke-width:2px,color:#fff;
+    P1_1["1. S1"]:::path --> P1_2{"2. D1 (True)"}:::path
+    P1_2 --> P1_3{"3. D2 (True)"}:::path
+    P1_3 --> P1_4["4. S4 (status=1)"]:::path
+    P1_4 --> P1_5{"5. D3 (True)"}:::path
+    P1_5 --> P1_6["6. S6 (status=2)"]:::path
+    P1_6 --> P1_7["7. S7 (return 2)"]:::path
+    P1_7 --> P1_8(["8. End"]):::path
+```
+
+#### 🔹 Đường P2: Đăng nhập thành công với quyền User thường (Phủ nhánh False của D3)
+- **Đường đi:** $1 \to 2(\text{True}) \to 3(\text{True}) \to 4 \to 5(\text{False}) \to 7 \to 8$
+- **Đặc điểm:** Bao phủ nhánh `True` của D1, D2 và nhánh `False` của D3; giữ nguyên `status = 1`; trả về `status = 1`.
+
+```mermaid
+flowchart LR
+    classDef path fill:#2196F3,stroke:#0D47A1,stroke-width:2px,color:#fff;
+    P2_1["1. S1"]:::path --> P2_2{"2. D1 (True)"}:::path
+    P2_2 --> P2_3{"3. D2 (True)"}:::path
+    P2_3 --> P2_4["4. S4 (status=1)"]:::path
+    P2_4 --> P2_5{"5. D3 (False)"}:::path
+    P2_5 --> P2_7["7. S7 (return 1)"]:::path
+    P2_7 --> P2_8(["8. End"]):::path
+```
+
+#### 🔹 Đường P3: Mật khẩu quá ngắn (Phủ nhánh False của D2)
+- **Đường đi:** $1 \to 2(\text{True}) \to 3(\text{False}) \to 7 \to 8$
+- **Đặc điểm:** Bao phủ nhánh `True` của D1 và nhánh `False` của D2; bỏ qua toàn bộ khối gán status; trả về `status = 0`.
+
+```mermaid
+flowchart LR
+    classDef path fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff;
+    P3_1["1. S1"]:::path --> P3_2{"2. D1 (True)"}:::path
+    P3_2 --> P3_3{"3. D2 (False)"}:::path
+    P3_3 --> P3_7["7. S7 (return 0)"]:::path
+    P3_7 --> P3_8(["8. End"]):::path
+```
+
+#### 🔹 Đường P4: Dữ liệu tài khoản/mật khẩu bị NULL (Phủ nhánh False của D1)
+- **Đường đi:** $1 \to 2(\text{False}) \to 7 \to 8$
+- **Đặc điểm:** Bao phủ nhánh `False` của D1; trực tiếp nhảy về return; trả về `status = 0`.
+
+```mermaid
+flowchart LR
+    classDef path fill:#F44336,stroke:#B71C1C,stroke-width:2px,color:#fff;
+    P4_1["1. S1"]:::path --> P4_2{"2. D1 (False)"}:::path
+    P4_2 --> P4_7["7. S7 (return 0)"]:::path
+    P4_7 --> P4_8(["8. End"]):::path
+```
+
+---
+
+### Bước 4: Ma trận bao phủ Câu lệnh và Quyết định (Coverage Matrix)
+
+#### Bảng đối soát Statement Coverage (Bao phủ câu lệnh):
+
+| Câu lệnh (Statement) | Nội dung câu lệnh | P1 | P2 | P3 | P4 | Mức độ bao phủ |
+|:---:|:---|:---:|:---:|:---:|:---:|:---:|
+| **S1** (Nút 1) | `status = 0` | ✓ | ✓ | ✓ | ✓ | 100% |
+| **S2** (Nút 2) | `if (username != NULL && password != NULL)` | ✓ | ✓ | ✓ | ✓ | 100% |
+| **S3** (Nút 3) | `if (strlen(password) >= 8)` | ✓ | ✓ | ✓ | | 100% |
+| **S4** (Nút 4) | `status = 1` | ✓ | ✓ | | | 100% |
+| **S5** (Nút 5) | `if (isAdmin == 1)` | ✓ | ✓ | | | 100% |
+| **S6** (Nút 6) | `status = 2` | ✓ | | | | 100% |
+| **S7** (Nút 7) | `return status` | ✓ | ✓ | ✓ | ✓ | 100% |
+
+#### Bảng đối soát Decision Coverage (Bao phủ quyết định / nhánh):
+
+| Quyết định | Nhánh True được phủ bởi | Nhánh False được phủ bởi | Đạt Decision Coverage |
+|:---:|:---:|:---:|:---:|
+| **D1** (Nút 2) | TC01, TC02, TC03 (P1, P2, P3) | TC04 (P4) | ✅ 100% |
+| **D2** (Nút 3) | TC01, TC02 (P1, P2) | TC03 (P3) | ✅ 100% |
+| **D3** (Nút 5) | TC01 (P1) | TC02 (P2) | ✅ 100% |
+
+---
+
+### Bước 5: Bảng ca kiểm thử hộp trắng (Statement & Decision Coverage Test Cases)
+
+| TC ID | Mục tiêu kiểm thử | `username` | `password` | `isAdmin` | Luồng câu lệnh thực thi | Nhánh quyết định (D1, D2, D3) | Kết quả mong đợi (`status`) |
+|:---:|:---|:---|:---|:---:|:---|:---:|:---:|
+| **TC01** | Phủ toàn bộ câu lệnh, quyền Admin | `"admin"` | `"pass12345"` | 1 | S1, S2, S3, S4, S5, S6, S7 | D1=T, D2=T, D3=T | `2`<br>(Admin thành công) |
+| **TC02** | Phủ quyền User thường (D3 False) | `"user01"` | `"pass12345"` | 0 | S1, S2, S3, S4, S5, S7 | D1=T, D2=T, D3=F | `1`<br>(User thành công) |
+| **TC03** | Phủ mật khẩu ngắn < 8 ký tự (D2 False) | `"user01"` | `"abc"` | 0 | S1, S2, S3, S7 | D1=T, D2=F | `0`<br>(Đăng nhập thất bại) |
+| **TC04** | Phủ dữ liệu NULL (D1 False) | `NULL` | `NULL` | 0 | S1, S2, S7 | D1=F | `0`<br>(Đăng nhập thất bại) |
+
+---
+
+> **Tổng kết thang điểm đạt được:**
+> - **Vẽ sơ đồ CFG:** 1.0 điểm – Đầy đủ nút, nhánh rẽ điều kiện và điểm hội tụ rõ ràng.
+> - **Tính Cyclomatic Complexity $V(G)$:** 1.0 điểm – Trình bày đủ 2 công thức $E - N + 2 = 10 - 8 + 2 = 4$ và $P + 1 = 3 + 1 = 4$.
+> - **Phân tích và sơ đồ hóa Statement & Decision Coverage:** 1.0 điểm – Sơ đồ hóa từng đường, ma trận kiểm chứng S1–S7 và D1–D3 đầy đủ.
+> - **Thiết kế bảng Ca kiểm thử (Test Cases):** 1.0 điểm – Dữ liệu chuỗi rõ ràng, vết câu lệnh thực thi và kết quả trả về chính xác.
